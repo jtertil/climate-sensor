@@ -1,7 +1,15 @@
-import urequests, time
+import time
+import urequests
+import uasyncio
+from setup import button, led, sensor, display, ap, wifi, WLAN_SSID, \
+    WLAN_PASSW, API_KEY, API_URL, SENSOR_ID, READ_INTERV
 
-from setup import led, sensor, ap, wifi, WLAN_SSID, WLAN_PASSW, \
-    API_KEY, API_URL, SENSOR_ID, READ_INTERV
+
+def display_data(temperature, humidity):
+    display.fill(0)
+    display.text('temp.: {} C'.format(temperature), 0, 0)
+    display.text('humidity: {} %'.format(humidity), 0, 32)
+    display.show()
 
 
 def sensor_read():
@@ -10,20 +18,24 @@ def sensor_read():
     return sensor.temperature(), sensor.humidity()
 
 
-def connect_to_wifi():
+def connect_to_wifi(ssid=WLAN_SSID, passw=WLAN_PASSW):
     ap.active(False)
     wifi.active(True)
 
-    if not wifi.isconnected():
+    while not wifi.isconnected():
         led_blink(3)
-        while not wifi.isconnected():
-            wifi.connect(WLAN_SSID, WLAN_PASSW)
-            time.sleep(5)
+        wifi.connect(ssid, passw)
+        time.sleep(5)
 
 
 def log_data(temperature, humidity):
-    data = {'sensor_id': SENSOR_ID, 'key': API_KEY,
-            'values': {'temperature': temperature, 'humidity': humidity}}
+    data = {'sensor_id': SENSOR_ID,
+            'key': API_KEY,
+            'values': {
+                'temperature': temperature,
+                'humidity': humidity
+                }
+            }
 
     try:
         urequests.post(API_URL, json=data)
@@ -40,12 +52,24 @@ def led_blink(num):
     led.on()
 
 
-def run():
+async def run():
     while True:
-        connect_to_wifi()
-        t, h = sensor_read()
-        log_data(t, h)
-        time.sleep(60 * READ_INTERV)
+        if wifi.isconnected():
+            t, h = sensor_read()
+            log_data(t, h)
+            await uasyncio.sleep(60 * READ_INTERV)
+        else:
+            connect_to_wifi()
 
 
-run()
+async def display_toggle():
+    while True:
+        if button.value() == 0:
+            print(button)
+            await uasyncio.sleep(1)
+
+
+loop = uasyncio.get_event_loop()
+loop.create_task(display_toggle())
+loop.create_task(run())
+loop.run_forever()

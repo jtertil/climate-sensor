@@ -20,6 +20,16 @@ led = Pin(LED_PIN, Pin.OUT)
 # sensor config
 sensor = DHT22(Pin(DHT22_PIN))
 
+# display config
+i2c = I2C(
+    scl=Pin(I2C_SCL_PIN),
+    sda=Pin(I2C_SDA_PIN))
+i2c.scan()
+display = SSD1306_I2C(128, 64, i2c)
+
+# button config
+BUTTON_PIN = pins['D1']
+button = Pin(BUTTON_PIN, Pin.IN, Pin.PULL_UP)
 
 # WLAN config
 WLAN_SSID = ''
