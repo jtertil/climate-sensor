@@ -56,6 +56,7 @@ async def run():
     while True:
         if wifi.isconnected():
             t, h = sensor_read()
+            display_data(t, h)
             log_data(t, h)
             await uasyncio.sleep(60 * READ_INTERV)
         else:
@@ -65,8 +66,9 @@ async def run():
 async def display_toggle():
     while True:
         if button.value() == 0:
-            print(button)
-            await uasyncio.sleep(1)
+            display.poweron()
+            await uasyncio.sleep(5)
+            display.poweroff()
 
 
 loop = uasyncio.get_event_loop()
