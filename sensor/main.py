@@ -147,6 +147,7 @@ sensor = SensorControl(sensor_config)
 
 
 def run():
+    led.set_off()
     led.blink(5)
     t, h = sensor.read()
     display.show_temp_humidity_status(
