@@ -167,6 +167,7 @@ def run():
                 con.connect_to_wifi()
 
             i += 1
+            t, h = sensor.read()
             display.show_temp_humidity_status(
                 t, h, i, con.get_wifi_status(), con.get_api_status())
             time.sleep(1)
@@ -179,6 +180,6 @@ def run():
                 t, h, i, con.get_wifi_status(), con.get_api_status())
             i = 0
 
-            
+
 run()
 
