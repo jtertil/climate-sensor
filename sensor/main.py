@@ -13,7 +13,6 @@ class ConnectionControl:
         self.key = connection_config['API_KEY']
         self.url = connection_config['API_URL']
         self.sensor_id = connection_config['SENSOR_ID']
-        # self.wifi_status = self.wifi.status()
         self.api_status = ''
 
     def get_wifi_status(self):
@@ -150,36 +149,52 @@ sensor = SensorControl(sensor_config)
 def run():
     led.set_off()
     t, h = sensor.read()
-    i = 0
+    led.blink(5)
+    count = time.time()
+
     display.show_temp_humidity_status(
-        t, h, i, con.get_wifi_status(), con.get_api_status())
+        t, h,
+        (time.time() - count),
+        con.get_wifi_status(),
+        con.get_api_status())
 
     while True:
-        if i < 60 * LOG_INTERVAL:
+        loop_start_time = time.ticks_ms()
+
+        if (time.time() - count) < 60 * LOG_INTERVAL:
             if button.value() == 0:
                 display.toggle()
-                time.sleep(1)
 
             elif con.get_wifi_status() != 5:
                 display.show_temp_humidity_status(
-                    t, h, i, con.get_wifi_status(), con.get_api_status())
+                    t, h,
+                    (time.time() - count),
+                    con.get_wifi_status(),
+                    con.get_api_status())
                 led.blink_err(3)
                 con.connect_to_wifi()
 
-            i += 1
             t, h = sensor.read()
             display.show_temp_humidity_status(
-                t, h, i, con.get_wifi_status(), con.get_api_status())
-            time.sleep(1)
+                t, h,
+                (time.time() - count),
+                con.get_wifi_status(),
+                con.get_api_status())
+
+            execution_time = time.ticks_diff(time.ticks_ms(), loop_start_time)
+
+            time.sleep_ms(1000 - execution_time)
 
         else:
             led.blink()
             t, h = sensor.read()
             con.send_to_api(t, h)
             display.show_temp_humidity_status(
-                t, h, i, con.get_wifi_status(), con.get_api_status())
-            i = 0
+                t, h,
+                (time.time() - count),
+                con.get_wifi_status(),
+                con.get_api_status())
+            count = time.time()
 
 
 run()
-
