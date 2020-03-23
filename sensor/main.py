@@ -13,8 +13,8 @@ class ConnectionControl:
         self.key = connection_config['API_KEY']
         self.url = connection_config['API_URL']
         self.sensor_id = connection_config['SENSOR_ID']
-        self.wifi_status = self.wifi.status()
-        self.api_status = 0
+        # self.wifi_status = self.wifi.status()
+        self.api_status = ''
 
     def get_wifi_status(self):
         return self.wifi.status()
@@ -108,10 +108,11 @@ class DisplayControl:
         self.d.text('humidity: {} %'.format(h), 0, 16)
         self.d.show()
 
-    def show_temp_humidity_status(self, t, h, wifi_status, api_status):
+    def show_temp_humidity_status(self, t, h, i, wifi_status, api_status):
         self.d.fill(0)
         self.d.text('temp.: {} C'.format(t), 0, 0)
         self.d.text('humidity: {} %'.format(h), 0, 16)
+        self.d.text('i: {}'.format(i), 0, 32)
         self.d.text(
             'wifi: {} api: {}'.format(wifi_status, api_status), 0, 48)
         self.d.show()
@@ -148,31 +149,36 @@ sensor = SensorControl(sensor_config)
 
 def run():
     led.set_off()
-    led.blink(5)
     t, h = sensor.read()
-    display.show_temp_humidity_status(
-        t, h, con.get_wifi_status(), con.get_api_status())
     i = 0
+    display.show_temp_humidity_status(
+        t, h, i, con.get_wifi_status(), con.get_api_status())
+
     while True:
         if i < 60 * LOG_INTERVAL:
             if button.value() == 0:
                 display.toggle()
                 time.sleep(1)
 
-            i += 1
-            time.sleep(1)
-
-        else:
-            if con.wifi_status != 5:
+            elif con.get_wifi_status() != 5:
+                display.show_temp_humidity_status(
+                    t, h, i, con.get_wifi_status(), con.get_api_status())
                 led.blink_err(3)
                 con.connect_to_wifi()
 
+            i += 1
+            display.show_temp_humidity_status(
+                t, h, i, con.get_wifi_status(), con.get_api_status())
+            time.sleep(1)
+
+        else:
             led.blink()
             t, h = sensor.read()
             con.send_to_api(t, h)
             display.show_temp_humidity_status(
-                t, h, con.get_wifi_status(), con.get_api_status())
+                t, h, i, con.get_wifi_status(), con.get_api_status())
             i = 0
 
-
+            
 run()
+
